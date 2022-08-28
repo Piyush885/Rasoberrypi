@@ -13,23 +13,24 @@ while True:
     humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
 
     # Gps code is here-------------
-    # ser=serial.Serial("/dev/ttyAMA0", baudrate=9600,timeout = 5)
-    # dataout =pynmea2.NMEAStreamReader() 
-    # newdata=ser.readline()
-    #if '$GPRMC' in str(newdata):
+    ser=serial.Serial("/dev/ttyAMA0", baudrate=9600,timeout = 5)
+    dataout =pynmea2.NMEAStreamReader() 
+    newdata=ser.readline()
+    if '$GPRMC' in str(newdata):
         #print(newdata.decode('utf-8'))
 
-            #newmsg=pynmea2.parse(newdata.decode('utf-8'))  
-            #lat=newmsg.latitude 
-            #lng=newmsg.longitude 
-            #gps = "Latitude=" + str(lat) + "and Longitude=" +str(lng)
+        newmsg=pynmea2.parse(newdata.decode('utf-8'))  
+        lat=newmsg.latitude 
+        lng=newmsg.longitude 
+        gps = str(lat)+ ","+ str(lng)
     # gps code end here---------------------
 
-    gps = '9.57 , 77.67'
+    #gps = '9.57 , 77.67'
     now = datetime.datetime.now()
     timestamp = datetime.datetime.timestamp(now)*1000    
     
-    url = 'http://172.20.122.101:8000/hwd/update'
+    url = 'https://proxymorons.herokuapp.com/hwd/update'
+    gps = "0,0"
     
     try:
         file1 = open("secret_key.txt",'r')
@@ -51,16 +52,32 @@ while True:
                     "data": br
                 }
             x = requests.post(url, json = myobj)
-            print(x.text)    
+            #print(x.text)    
         # take data from gps and sensor and if there is internet connectivity will upload it to blockchain.----------
         ar = []
-        for i in range(1):
-            gps = '9.57 , 77.67'
+        for i in range(100):
+            ser=serial.Serial("/dev/ttyAMA0", baudrate=9600,timeout = 5)
+            dataout =pynmea2.NMEAStreamReader() 
+            newdata=ser.readline()
+            if '$GPRMC' in str(newdata):
+        #print(newdata.decode('utf-8'))
+
+                newmsg=pynmea2.parse(newdata.decode('utf-8'))  
+                lat=newmsg.latitude 
+                lng=newmsg.longitude 
+                #print(lat,lng)
+                if lat == 0.0 and lng == 0.0:
+                    gps = "9.574505114120495, 77.67844466368108"
+                else:
+                    gps = str(lat)+ ","+ str(lng)
+                print(gps)    
+            #gps = '9.57509292594417, 77.6786253585071'
             now = datetime.datetime.now()
             timestamp = datetime.datetime.timestamp(now)*1000    
             humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
             ar.append({"timestamp":timestamp, "temperature":temperature , "humidity":humidity ,"gps":gps })
-            time.sleep(2)
+            time.sleep(1)
+            print("yes")
         myobj = {'hardware_id': str(a[0]).replace('\n',''),
                     'hardware_secret_key' : str(a[1]).replace('\n',''),
                     "data": ar
@@ -71,10 +88,10 @@ while True:
 
 
     # Code to save data on file in case not able to post data on blockchain-------------------------------       
-    except:
-       file.write("timestamp"+":"+ str(timestamp) + ", "+"temperature"+":"+ str(temperature) +", "+ "humidity"+":" +str(humidity) + "," + "gps"+":"+str(gps) + "\n")            
-       print("no")
+    # except:
+    #    file.write("timestamp"+":"+ str(timestamp) + ", "+"temperature"+":"+ str(temperature) +", "+ "humidity"+":" +str(humidity) + "," + "gps"+":"+str(gps) + "\n")            
+    #    print("no")
 
-    # This code print the exception in whole program------------------------   
-    # except Exception as e:
-    #     print(e)   
+    #This code print the exception in whole program------------------------   
+    except Exception as e:
+        print(e)   
